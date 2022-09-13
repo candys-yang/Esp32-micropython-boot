@@ -56,6 +56,7 @@
 #define MICROPY_MODULE_WEAK_LINKS           (1)
 // Control over Python builtins
 #define MICROPY_PY_ASYNC_AWAIT              (0)
+#define MICROPY_PY_BUILTINS_BYTES_HEX       (1)
 #define MICROPY_PY_BUILTINS_STR_COUNT       (0)
 #define MICROPY_PY_BUILTINS_MEMORYVIEW      (1)
 #define MICROPY_PY_BUILTINS_SET             (0)
@@ -76,7 +77,6 @@
 #define MICROPY_PY_SYS_EXIT                 (1)
 #define MICROPY_PY_SYS_STDFILES             (1)
 #define MICROPY_PY_SYS_MAXSIZE              (1)
-#define MICROPY_PY_IO_FILEIO                (1)
 #define MICROPY_PY_IO                       (1)
 #define MICROPY_PY_IO_IOBASE                (1)
 
@@ -94,13 +94,6 @@
 #define MICROPY_PY_URANDOM                  (1)
 #define MICROPY_PY_UZLIB                    (1)
 #define MICROPY_PY_UASYNCIO                 (1)
-
-// Use VfsLfs's types for fileio/textio
-#define mp_type_fileio mp_type_vfs_lfs1_fileio
-#define mp_type_textio mp_type_vfs_lfs1_textio
-
-#define MICROPY_PORT_ROOT_POINTERS \
-    const char *readline_hist[8];
 
 #define MP_STATE_PORT MP_STATE_VM
 

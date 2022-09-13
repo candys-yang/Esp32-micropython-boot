@@ -232,7 +232,7 @@ char *mp_obj_int_formatted(char **buf, size_t *buf_size, size_t *fmt_size, mp_co
         // A small int; get the integer value to format.
         num = MP_OBJ_SMALL_INT_VALUE(self_in);
     } else {
-        assert(mp_obj_is_type(self_in, &mp_type_int));
+        assert(mp_obj_is_exact_type(self_in, &mp_type_int));
         // Not a small int.
         #if MICROPY_LONGINT_IMPL == MICROPY_LONGINT_IMPL_LONGLONG
         const mp_obj_int_t *self = self_in;
@@ -446,7 +446,7 @@ STATIC mp_obj_t int_to_bytes(size_t n_args, const mp_obj_t *args) {
         mp_binary_set_int(l, big_endian, data + (big_endian ? (len - l) : 0), val);
     }
 
-    return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
+    return mp_obj_new_bytes_from_vstr(&vstr);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(int_to_bytes_obj, 3, 4, int_to_bytes);
 

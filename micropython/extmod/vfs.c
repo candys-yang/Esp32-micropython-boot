@@ -100,6 +100,8 @@ STATIC mp_vfs_mount_t *lookup_path(mp_obj_t path_in, mp_obj_t *path_out) {
     if (vfs != MP_VFS_NONE && vfs != MP_VFS_ROOT) {
         *path_out = mp_obj_new_str_of_type(mp_obj_get_type(path_in),
             (const byte *)p_out, strlen(p_out));
+    } else {
+        *path_out = MP_OBJ_NULL;
     }
     return vfs;
 }
@@ -310,7 +312,7 @@ mp_obj_t mp_vfs_open(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
     #if MICROPY_VFS_POSIX
     // If the file is an integer then delegate straight to the POSIX handler
     if (mp_obj_is_small_int(args[ARG_file].u_obj)) {
-        return mp_vfs_posix_file_open(&mp_type_textio, args[ARG_file].u_obj, args[ARG_mode].u_obj);
+        return mp_vfs_posix_file_open(&mp_type_vfs_posix_textio, args[ARG_file].u_obj, args[ARG_mode].u_obj);
     }
     #endif
 
@@ -358,7 +360,7 @@ mp_obj_t mp_vfs_getcwd(void) {
     if (!(cwd[0] == '/' && cwd[1] == 0)) {
         vstr_add_str(&vstr, cwd);
     }
-    return mp_obj_new_str_from_vstr(&mp_type_str, &vstr);
+    return mp_obj_new_str_from_vstr(&vstr);
 }
 MP_DEFINE_CONST_FUN_OBJ_0(mp_vfs_getcwd_obj, mp_vfs_getcwd);
 
@@ -544,5 +546,8 @@ int mp_vfs_mount_and_chdir_protected(mp_obj_t bdev, mp_obj_t mount_point) {
     }
     return ret;
 }
+
+MP_REGISTER_ROOT_POINTER(struct _mp_vfs_mount_t *vfs_cur);
+MP_REGISTER_ROOT_POINTER(struct _mp_vfs_mount_t *vfs_mount_table);
 
 #endif // MICROPY_VFS

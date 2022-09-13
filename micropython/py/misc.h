@@ -52,6 +52,11 @@ typedef unsigned int uint;
 
 // Static assertion macro
 #define MP_STATIC_ASSERT(cond) ((void)sizeof(char[1 - 2 * !(cond)]))
+#if defined(_MSC_VER)
+#define MP_STATIC_ASSERT_NOT_MSC(cond) (1)
+#else
+#define MP_STATIC_ASSERT_NOT_MSC(cond) MP_STATIC_ASSERT(cond)
+#endif
 
 // Round-up integer division
 #define MP_CEIL_DIVIDE(a, b) (((a) + (b) - 1) / (b))
@@ -238,10 +243,12 @@ extern mp_uint_t mp_verbose_flag;
 
 #if MICROPY_FLOAT_IMPL == MICROPY_FLOAT_IMPL_DOUBLE
 #define MP_FLOAT_EXP_BITS (11)
+#define MP_FLOAT_EXP_OFFSET (1023)
 #define MP_FLOAT_FRAC_BITS (52)
 typedef uint64_t mp_float_uint_t;
 #elif MICROPY_FLOAT_IMPL == MICROPY_FLOAT_IMPL_FLOAT
 #define MP_FLOAT_EXP_BITS (8)
+#define MP_FLOAT_EXP_OFFSET (127)
 #define MP_FLOAT_FRAC_BITS (23)
 typedef uint32_t mp_float_uint_t;
 #endif
@@ -288,15 +295,16 @@ typedef union _mp_float_union_t {
 
 // Force usage of the MP_ERROR_TEXT macro by requiring an opaque type.
 typedef struct {
-    #ifdef __clang__
-    // Fix "error: empty struct has size 0 in C, size 1 in C++".
+    #if defined(__clang__) || defined(_MSC_VER)
+    // Fix "error: empty struct has size 0 in C, size 1 in C++", and the msvc counterpart
+    // "C requires that a struct or union have at least one member"
     char dummy;
     #endif
 } *mp_rom_error_text_t;
 
 #include <string.h>
 
-inline __attribute__((always_inline)) const char *MP_COMPRESSED_ROM_TEXT(const char *msg) {
+inline MP_ALWAYSINLINE const char *MP_COMPRESSED_ROM_TEXT(const char *msg) {
     // "genhdr/compressed.data.h" contains an invocation of the MP_MATCH_COMPRESSED macro for each compressed string.
     // The giant if(strcmp) tree is optimized by the compiler, which turns this into a direct return of the compressed data.
     #define MP_MATCH_COMPRESSED(a, b) if (strcmp(msg, a) == 0) { return b; } else

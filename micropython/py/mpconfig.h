@@ -29,7 +29,7 @@
 // Current version of MicroPython
 #define MICROPY_VERSION_MAJOR 1
 #define MICROPY_VERSION_MINOR 19
-#define MICROPY_VERSION_MICRO 0
+#define MICROPY_VERSION_MICRO 1
 
 // Combined version as a 32-bit number for convenience
 #define MICROPY_VERSION ( \
@@ -606,6 +606,11 @@
 #define MICROPY_ENABLE_GC (0)
 #endif
 
+// Whether the garbage-collected heap can be split over multiple memory areas.
+#ifndef MICROPY_GC_SPLIT_HEAP
+#define MICROPY_GC_SPLIT_HEAP (0)
+#endif
+
 // Hook to run code during time consuming garbage collector operations
 #ifndef MICROPY_GC_HOOK_LOOP
 #define MICROPY_GC_HOOK_LOOP
@@ -697,6 +702,11 @@
 // Whether port requires event-driven REPL functions
 #ifndef MICROPY_REPL_EVENT_DRIVEN
 #define MICROPY_REPL_EVENT_DRIVEN (0)
+#endif
+
+// The number of items to keep in the readline history.
+#ifndef MICROPY_READLINE_HISTORY_SIZE
+#define MICROPY_READLINE_HISTORY_SIZE (8)
 #endif
 
 // Whether to include lexer helper function for unix
@@ -975,6 +985,11 @@ typedef double mp_float_t;
 // Issue a warning when comparing str and bytes objects
 #ifndef MICROPY_PY_STR_BYTES_CMP_WARN
 #define MICROPY_PY_STR_BYTES_CMP_WARN (0)
+#endif
+
+// Add bytes.hex and bytes.fromhex
+#ifndef MICROPY_PY_BUILTINS_BYTES_HEX
+#define MICROPY_PY_BUILTINS_BYTES_HEX (MICROPY_CONFIG_ROM_LEVEL_AT_LEAST_EXTRA_FEATURES)
 #endif
 
 // Whether str object is proper unicode
@@ -1304,11 +1319,6 @@ typedef double mp_float_t;
 // Whether to provide "io.IOBase" class to support user streams
 #ifndef MICROPY_PY_IO_IOBASE
 #define MICROPY_PY_IO_IOBASE (MICROPY_CONFIG_ROM_LEVEL_AT_LEAST_EXTRA_FEATURES)
-#endif
-
-// Whether to provide "io.FileIO" class
-#ifndef MICROPY_PY_IO_FILEIO
-#define MICROPY_PY_IO_FILEIO (MICROPY_CONFIG_ROM_LEVEL_AT_LEAST_EXTRA_FEATURES)
 #endif
 
 // Whether to provide "io.BytesIO" class
@@ -1652,11 +1662,6 @@ typedef double mp_float_t;
 // Additional constant definitions for the compiler - see compile.c:mp_constants_table.
 #ifndef MICROPY_PORT_CONSTANTS
 #define MICROPY_PORT_CONSTANTS
-#endif
-
-// Any root pointers for GC scanning - see mpstate.c
-#ifndef MICROPY_PORT_ROOT_POINTERS
-#define MICROPY_PORT_ROOT_POINTERS
 #endif
 
 /*****************************************************************************/

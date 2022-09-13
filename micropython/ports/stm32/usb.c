@@ -367,6 +367,24 @@ usbd_cdc_itf_t *usb_vcp_get(int idx) {
     return &usb_device.usbd_cdc_itf[idx];
 }
 
+#if MICROPY_HW_USB_HID
+
+// return hid interface if hid is configured, NULL otherwise
+usbd_hid_itf_t *usbd_hid_get(void) {
+    #if defined(USE_HOST_MODE)
+    return NULL;
+    #else
+    uint8_t usb_mode = USBD_GetMode(&usb_device.usbd_cdc_msc_hid_state) & USBD_MODE_IFACE_MASK;
+    if (usb_mode == USBD_MODE_HID || usb_mode == USBD_MODE_CDC_HID || usb_mode == USBD_MODE_MSC_HID) {
+        return &usb_device.usbd_hid_itf;
+    } else {
+        return NULL;
+    }
+    #endif
+}
+
+#endif
+
 /******************************************************************************/
 // MicroPython bindings for USB
 
@@ -795,7 +813,7 @@ STATIC mp_obj_t pyb_usb_vcp_recv(size_t n_args, const mp_obj_t *args, mp_map_t *
         return mp_obj_new_int(ret); // number of bytes read into given buffer
     } else {
         vstr.len = ret; // set actual number of bytes read
-        return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr); // create a new buffer
+        return mp_obj_new_bytes_from_vstr(&vstr); // create a new buffer
     }
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(pyb_usb_vcp_recv_obj, 1, pyb_usb_vcp_recv);
@@ -989,7 +1007,7 @@ STATIC mp_obj_t pyb_usb_hid_recv(size_t n_args, const mp_obj_t *args, mp_map_t *
         return mp_obj_new_int(ret); // number of bytes read into given buffer
     } else {
         vstr.len = ret; // set actual number of bytes read
-        return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr); // create a new buffer
+        return mp_obj_new_bytes_from_vstr(&vstr); // create a new buffer
     }
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(pyb_usb_hid_recv_obj, 1, pyb_usb_hid_recv);
@@ -1133,5 +1151,10 @@ void USR_KEYBRD_ProcessData(uint8_t pbuf) {
 }
 
 #endif // USE_HOST_MODE
+
+#if MICROPY_HW_USB_HID
+MP_REGISTER_ROOT_POINTER(mp_obj_t pyb_hid_report_desc);
+#endif
+MP_REGISTER_ROOT_POINTER(mp_obj_t pyb_usb_vcp_irq[MICROPY_HW_USB_CDC_NUM]);
 
 #endif // MICROPY_HW_ENABLE_USB

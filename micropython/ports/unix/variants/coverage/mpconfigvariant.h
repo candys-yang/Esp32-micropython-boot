@@ -28,15 +28,12 @@
 // for coverage testing.
 
 // Set base feature level.
-#define MICROPY_CONFIG_ROM_LEVEL (MICROPY_CONFIG_ROM_LEVEL_EXTRA_FEATURES)
-
-// Disable some features that come enabled by default with the feature level.
-#define MICROPY_PY_BUILTINS_EXECFILE            (0)
-#define MICROPY_PY_SYS_STDIO_BUFFER             (0)
-#define MICROPY_PY_USELECT                      (0)
+#define MICROPY_CONFIG_ROM_LEVEL (MICROPY_CONFIG_ROM_LEVEL_EVERYTHING)
 
 // Enable additional features.
 #define MICROPY_DEBUG_PARSE_RULE_NAME  (1)
+#define MICROPY_GC_SPLIT_HEAP          (1)
+#define MICROPY_GC_SPLIT_HEAP_N_HEAPS  (4)
 #define MICROPY_TRACKED_ALLOC           (1)
 #define MICROPY_FLOAT_HIGH_QUALITY_HASH (1)
 #define MICROPY_REPL_EMACS_WORDS_MOVE  (1)
@@ -47,7 +44,6 @@
 #define MICROPY_PY_BUILTINS_NEXT2      (1)
 #define MICROPY_PY_BUILTINS_RANGE_BINOP (1)
 #define MICROPY_PY_SYS_GETSIZEOF       (1)
-#define MICROPY_PY_SYS_TRACEBACKLIMIT  (1)
 #define MICROPY_PY_IO_BUFFEREDWRITER (1)
 #define MICROPY_PY_URANDOM_SEED_INIT_FUNC (mp_urandom_seed_init())
 #define MICROPY_PY_URE_DEBUG           (1)

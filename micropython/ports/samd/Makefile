@@ -22,8 +22,9 @@ FROZEN_MANIFEST ?= boards/manifest.py
 
 # Include py core make definitions
 include $(TOP)/py/py.mk
+include $(TOP)/extmod/extmod.mk
 
-GIT_SUBMODULES = lib/asf4 lib/tinyusb
+GIT_SUBMODULES += lib/asf4 lib/tinyusb
 
 INC += -I.
 INC += -I$(TOP)
@@ -56,8 +57,9 @@ LDFLAGS += $(LDFLAGS_MOD)
 LIBS = $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
 # Tune for Debugging or Optimization
+CFLAGS += -g  # always include debug info in the ELF
 ifeq ($(DEBUG),1)
-CFLAGS += -O0 -ggdb
+CFLAGS += -O0
 else
 CFLAGS += -Os -DNDEBUG
 LDFLAGS += --gc-sections
@@ -126,6 +128,7 @@ SRC_QSTR += \
 	machine_led.c \
 	modsamd.c \
 	samd_flash.c \
+	shared/readline/readline.c \
 
 SRC_QSTR += $(SRC_MOD) $(SRC_CXX)
 

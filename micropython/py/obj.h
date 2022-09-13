@@ -283,9 +283,11 @@ static inline bool mp_obj_is_obj(mp_const_obj_t o) {
 #define MP_OBJ_FROM_PTR(p) ((mp_obj_t)((uintptr_t)(p)))
 
 // rom object storage needs special handling to widen 32-bit pointer to 64-bits
-typedef union _mp_rom_obj_t { uint64_t u64;
-                              struct { const void *lo, *hi;
-                              } u32;
+typedef union _mp_rom_obj_t {
+    uint64_t u64;
+    struct {
+        const void *lo, *hi;
+    } u32;
 } mp_rom_obj_t;
 #define MP_ROM_INT(i) {MP_OBJ_NEW_SMALL_INT(i)}
 #define MP_ROM_QSTR(q) {MP_OBJ_NEW_QSTR(q)}
@@ -394,18 +396,20 @@ typedef struct _mp_rom_obj_t { mp_const_obj_t o; } mp_rom_obj_t;
         .table = (mp_map_elem_t *)(mp_rom_map_elem_t *)table_name, \
     }
 
-#define MP_DEFINE_CONST_DICT(dict_name, table_name) \
+#define MP_DEFINE_CONST_DICT_WITH_SIZE(dict_name, table_name, n) \
     const mp_obj_dict_t dict_name = { \
         .base = {&mp_type_dict}, \
         .map = { \
             .all_keys_are_qstrs = 1, \
             .is_fixed = 1, \
             .is_ordered = 1, \
-            .used = MP_ARRAY_SIZE(table_name), \
-            .alloc = MP_ARRAY_SIZE(table_name), \
+            .used = n, \
+            .alloc = n, \
             .table = (mp_map_elem_t *)(mp_rom_map_elem_t *)table_name, \
         }, \
     }
+
+#define MP_DEFINE_CONST_DICT(dict_name, table_name) MP_DEFINE_CONST_DICT_WITH_SIZE(dict_name, table_name, MP_ARRAY_SIZE(table_name))
 
 // These macros are used to declare and define constant staticmethond and classmethod objects
 // You can put "static" in front of the definitions to make them local
@@ -416,13 +420,18 @@ typedef struct _mp_rom_obj_t { mp_const_obj_t o; } mp_rom_obj_t;
 #define MP_DEFINE_CONST_STATICMETHOD_OBJ(obj_name, fun_name) const mp_rom_obj_static_class_method_t obj_name = {{&mp_type_staticmethod}, fun_name}
 #define MP_DEFINE_CONST_CLASSMETHOD_OBJ(obj_name, fun_name) const mp_rom_obj_static_class_method_t obj_name = {{&mp_type_classmethod}, fun_name}
 
+#ifndef NO_QSTR
+
 // Declare a module as a builtin, processed by makemoduledefs.py
 // param module_name: MP_QSTR_<module name>
 // param obj_module: mp_obj_module_t instance
-
-#ifndef NO_QSTR
 #define MP_REGISTER_MODULE(module_name, obj_module)
-#endif
+
+// Declare a root pointer (to avoid garbage collection of a global static variable).
+// param variable_declaration: a valid C variable declaration
+#define MP_REGISTER_ROOT_POINTER(variable_declaration)
+
+#endif // NO_QSTR
 
 // Underlying map/hash table implementation (not dict object or map function)
 
@@ -743,15 +752,29 @@ void *mp_obj_malloc_helper(size_t num_bytes, const mp_obj_type_t *type);
 // check for more specific object types.
 // Note: these are kept as macros because inline functions sometimes use much
 // more code space than the equivalent macros, depending on the compiler.
-#define mp_obj_is_type(o, t) (mp_obj_is_obj(o) && (((mp_obj_base_t *)MP_OBJ_TO_PTR(o))->type == (t))) // this does not work for checking int, str or fun; use below macros for that
+// don't use mp_obj_is_exact_type directly; use mp_obj_is_type which provides additional safety checks.
+// use the former only if you need to bypass these checks (because you've already checked everything else)
+#define mp_obj_is_exact_type(o, t) (mp_obj_is_obj(o) && (((mp_obj_base_t *)MP_OBJ_TO_PTR(o))->type == (t)))
+
+// Type checks are split to a separate, constant result macro. This is so it doesn't hinder the compilers's
+// optimizations (other tricks like using ({ expr; exper; }) or (exp, expr, expr) in mp_obj_is_type() result
+// in missed optimizations)
+#define mp_type_assert_not_bool_int_str_nonetype(t) (                                     \
+    MP_STATIC_ASSERT_NOT_MSC((t) != &mp_type_bool), assert((t) != &mp_type_bool),         \
+    MP_STATIC_ASSERT_NOT_MSC((t) != &mp_type_int), assert((t) != &mp_type_int),           \
+    MP_STATIC_ASSERT_NOT_MSC((t) != &mp_type_str), assert((t) != &mp_type_str),           \
+    MP_STATIC_ASSERT_NOT_MSC((t) != &mp_type_NoneType), assert((t) != &mp_type_NoneType), \
+    1)
+
+#define mp_obj_is_type(o, t) (mp_type_assert_not_bool_int_str_nonetype(t) && mp_obj_is_exact_type(o, t))
 #if MICROPY_OBJ_IMMEDIATE_OBJS
 // bool's are immediates, not real objects, so test for the 2 possible values.
 #define mp_obj_is_bool(o) ((o) == mp_const_false || (o) == mp_const_true)
 #else
-#define mp_obj_is_bool(o) mp_obj_is_type(o, &mp_type_bool)
+#define mp_obj_is_bool(o) mp_obj_is_exact_type(o, &mp_type_bool)
 #endif
-#define mp_obj_is_int(o) (mp_obj_is_small_int(o) || mp_obj_is_type(o, &mp_type_int))
-#define mp_obj_is_str(o) (mp_obj_is_qstr(o) || mp_obj_is_type(o, &mp_type_str))
+#define mp_obj_is_int(o) (mp_obj_is_small_int(o) || mp_obj_is_exact_type(o, &mp_type_int))
+#define mp_obj_is_str(o) (mp_obj_is_qstr(o) || mp_obj_is_exact_type(o, &mp_type_str))
 #define mp_obj_is_str_or_bytes(o) (mp_obj_is_qstr(o) || (mp_obj_is_obj(o) && ((mp_obj_base_t *)MP_OBJ_TO_PTR(o))->type->binary_op == mp_obj_str_binary_op))
 #define mp_obj_is_dict_or_ordereddict(o) (mp_obj_is_obj(o) && ((mp_obj_base_t *)MP_OBJ_TO_PTR(o))->type->make_new == mp_obj_dict_make_new)
 #define mp_obj_is_fun(o) (mp_obj_is_obj(o) && (((mp_obj_base_t *)MP_OBJ_TO_PTR(o))->type->name == MP_QSTR_function))
@@ -766,11 +789,17 @@ mp_obj_t mp_obj_new_int_from_uint(mp_uint_t value);
 mp_obj_t mp_obj_new_int_from_str_len(const char **str, size_t len, bool neg, unsigned int base);
 mp_obj_t mp_obj_new_int_from_ll(long long val); // this must return a multi-precision integer object (or raise an overflow exception)
 mp_obj_t mp_obj_new_int_from_ull(unsigned long long val); // this must return a multi-precision integer object (or raise an overflow exception)
-mp_obj_t mp_obj_new_str(const char *data, size_t len);
-mp_obj_t mp_obj_new_str_via_qstr(const char *data, size_t len);
-mp_obj_t mp_obj_new_str_from_vstr(const mp_obj_type_t *type, vstr_t *vstr);
+mp_obj_t mp_obj_new_str(const char *data, size_t len); // will check utf-8 (raises UnicodeError)
+mp_obj_t mp_obj_new_str_via_qstr(const char *data, size_t len); // input data must be valid utf-8
+mp_obj_t mp_obj_new_str_from_vstr(vstr_t *vstr); // will check utf-8 (raises UnicodeError)
+#if MICROPY_PY_BUILTINS_STR_UNICODE && MICROPY_PY_BUILTINS_STR_UNICODE_CHECK
+mp_obj_t mp_obj_new_str_from_utf8_vstr(vstr_t *vstr); // input data must be valid utf-8
+#else
+#define mp_obj_new_str_from_utf8_vstr mp_obj_new_str_from_vstr
+#endif
+mp_obj_t mp_obj_new_bytes_from_vstr(vstr_t *vstr);
 mp_obj_t mp_obj_new_bytes(const byte *data, size_t len);
-mp_obj_t mp_obj_new_bytearray(size_t n, void *items);
+mp_obj_t mp_obj_new_bytearray(size_t n, const void *items);
 mp_obj_t mp_obj_new_bytearray_by_ref(size_t n, void *items);
 #if MICROPY_PY_BUILTINS_FLOAT
 mp_obj_t mp_obj_new_int_from_float(mp_float_t val);
@@ -838,8 +867,21 @@ mp_obj_t mp_obj_subscr(mp_obj_t base, mp_obj_t index, mp_obj_t val);
 mp_obj_t mp_generic_unary_op(mp_unary_op_t op, mp_obj_t o_in);
 
 // cell
-mp_obj_t mp_obj_cell_get(mp_obj_t self_in);
-void mp_obj_cell_set(mp_obj_t self_in, mp_obj_t obj);
+
+typedef struct _mp_obj_cell_t {
+    mp_obj_base_t base;
+    mp_obj_t obj;
+} mp_obj_cell_t;
+
+static inline mp_obj_t mp_obj_cell_get(mp_obj_t self_in) {
+    mp_obj_cell_t *self = (mp_obj_cell_t *)MP_OBJ_TO_PTR(self_in);
+    return self->obj;
+}
+
+static inline void mp_obj_cell_set(mp_obj_t self_in, mp_obj_t obj) {
+    mp_obj_cell_t *self = (mp_obj_cell_t *)MP_OBJ_TO_PTR(self_in);
+    self->obj = obj;
+}
 
 // int
 // For long int, returns value truncated to mp_int_t

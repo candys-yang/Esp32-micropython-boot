@@ -107,9 +107,14 @@ extern uint32_t _heap_start;
 extern uint32_t _heap_end;
 
 int main(int argc, char **argv) {
+    // Hook for a board to run code at start up, for example check if a
+    // bootloader should be entered instead of the main application.
+    MICROPY_BOARD_STARTUP();
 
+    MICROPY_BOARD_EARLY_INIT();
 
 soft_reset:
+
     #if MICROPY_PY_TIME_TICKS
     rtc1_init_time_ticks();
     #endif
@@ -252,14 +257,14 @@ soft_reset:
 
     led_state(1, 0);
 
+    #if MICROPY_HW_USB_CDC
+    usb_cdc_init();
+    #endif
+
     #if MICROPY_VFS || MICROPY_MBFS || MICROPY_MODULE_FROZEN
     // run boot.py and main.py if they exist.
     pyexec_file_if_exists("boot.py");
     pyexec_file_if_exists("main.py");
-    #endif
-
-    #if MICROPY_HW_USB_CDC
-    usb_cdc_init();
     #endif
 
     for (;;) {

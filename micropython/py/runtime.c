@@ -319,6 +319,15 @@ mp_obj_t mp_unary_op(mp_unary_op_t op, mp_obj_t arg) {
             // if arg==mp_const_none.
             return mp_const_true;
         }
+        #if MICROPY_PY_BUILTINS_FLOAT
+        if (op == MP_UNARY_OP_FLOAT_MAYBE
+            #if MICROPY_PY_BUILTINS_COMPLEX
+            || op == MP_UNARY_OP_COMPLEX_MAYBE
+            #endif
+            ) {
+            return MP_OBJ_NULL;
+        }
+        #endif
         // With MP_UNARY_OP_INT, mp_unary_op() becomes a fallback for mp_obj_get_int().
         // In this case provide a more focused error message to not confuse, e.g. chr(1.0)
         #if MICROPY_ERROR_REPORTING <= MICROPY_ERROR_REPORTING_TERSE
@@ -805,7 +814,7 @@ void mp_call_prepare_args_n_kw_var(bool have_self, size_t n_args_n_kw, const mp_
                     mp_obj_t iterable = mp_getiter(arg, &iter_buf);
                     mp_obj_t item;
                     while ((item = mp_iternext(iterable)) != MP_OBJ_STOP_ITERATION) {
-                        if (args2_len >= args2_alloc) {
+                        if (args2_len + (n_args - i) >= args2_alloc) {
                             args2 = mp_nonlocal_realloc(args2, args2_alloc * sizeof(mp_obj_t),
                                 args2_alloc * 2 * sizeof(mp_obj_t));
                             args2_alloc *= 2;

@@ -86,7 +86,6 @@
 #define MICROPY_PY_MATH             (0)
 #define MICROPY_PY_CMATH            (0)
 #define MICROPY_PY_IO               (0)
-#define MICROPY_PY_IO_FILEIO        (0)
 #define MICROPY_PY_STRUCT           (0)
 #define MICROPY_PY_SYS              (1)
 #define MICROPY_PY_SYS_EXIT         (0)
@@ -106,11 +105,6 @@
 #define MICROPY_PY_UHEAPQ           (0)
 #define MICROPY_PY_UHASHLIB         (0)
 #define MICROPY_PY_UBINASCII        (0)
-
-#define MICROPY_PORT_ROOT_POINTERS \
-
-#define mp_type_fileio mp_type_vfs_posix_fileio
-#define mp_type_textio mp_type_vfs_posix_textio
 
 //////////////////////////////////////////
 // Do not change anything beyond this line

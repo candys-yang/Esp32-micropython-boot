@@ -54,7 +54,7 @@
 
 // this function inits the switch GPIO so that it can be used
 void switch_init0(void) {
-    mp_hal_pin_config(MICROPY_HW_USRSW_PIN, MP_HAL_PIN_MODE_INPUT, MICROPY_HW_USRSW_PULL, GPIO_LOW_POWER, 0);
+    mp_hal_pin_config(MICROPY_HW_USRSW_PIN, MP_HAL_PIN_MODE_INPUT, MICROPY_HW_USRSW_PULL, MP_HAL_PIN_DRIVE_0, 0);
 }
 
 int switch_get(void) {
@@ -143,5 +143,7 @@ const mp_obj_type_t pyb_switch_type = {
     .call = pyb_switch_call,
     .locals_dict = (mp_obj_dict_t *)&pyb_switch_locals_dict,
 };
+
+MP_REGISTER_ROOT_POINTER(mp_obj_t pyb_switch_callback);
 
 #endif // MICROPY_HW_HAS_SWITCH
